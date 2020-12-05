@@ -15,7 +15,6 @@
 
 第六步：生成网络后，不用任何操作，我们不用这软件分析。在上边栏选export->network->adjacent matrix，导出邻接矩阵。同样继续选择导出network summary。此时你的结果文件夹中会多出三个文件——
 1.network*x*.txt 2.network*x*Labels.txt 3.summary.tsv
-将summary文件重命名成“network*x*summary.tsv”便于后续操作。
 
 第七步：修改PI_extraction程序中的文件路径为你存放download_*year*.txt文件的路径，并在路径下放入参考的PI清单（"pi_list.txt"），最后运行程序（注意运行时间较长，大约三十秒）。该路径下会生成名为pi-title.tsv的文件。确认将该文件移动到第六步三个文件同一路径下。
 
