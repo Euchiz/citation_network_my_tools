@@ -1,12 +1,14 @@
 library(tidyverse)
 
 # your file folder, with files named after 'network*x*'
-# files include ('network*x*.txt' 'network*x*Labels.txt' 'network*x*summary.tsv')
-loc <- "/home/zaczou/projects/network_science/data/network407x407" 
+# files include 
+#('network*x*.txt' 'network*x*Labels.txt' 'network*x*summary.tsv' 'pi-title.tsv')
+loc <- "/home/zaczou/projects/network_science/data/" 
+netname <- "network407x407"
 
 #-------------------construct adjacent matrix-------------------#
-mtx <- read_delim(paste(loc,".txt",sep = ""),delim = " ",col_names = F)
-names <- read_delim(paste(loc,"Labels.txt",sep = ""),delim = "\n",col_names = F)
+mtx <- read_delim(paste(loc,netname,".txt",sep = ""),delim = " ",col_names = F)
+names <- read_delim(paste(loc,netname,"Labels.txt",sep = ""),delim = "\n",col_names = F)
 
 trct <- function(string){
   tr <- str_trim(unlist(str_split(string,"\t"))[1])
@@ -20,7 +22,7 @@ write_tsv(mtx,paste(loc,"_readable.tsv",sep = ""))
 #------------------annotate the nodes with title---------------#
 info.title <- read_tsv(paste(loc,"summary.tsv",sep = ""))
 relation <- info.title[,c("Author","Title","Page")]
-info.pi <- read_tsv("/home/zaczou/projects/network_science/data/pi-title.tsv")
+info.pi <- read_tsv(paste(loc,"pi-title.tsv",sep = ""))
 
 # quality control
 info.pi <- distinct(info.pi[info.pi$title %in% relation$Title,])
