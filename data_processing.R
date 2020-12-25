@@ -2,6 +2,7 @@
 library(tidyverse)
 library(pheatmap)
 library(RColorBrewer)
+library(reshape2)
 
 #--------------------------------------preprocessing-------------------------------------#
 
@@ -14,7 +15,6 @@ names <- read_delim(paste(loc,netname,"Labels.txt",sep = ""),delim = "\n",col_na
 
 trct <- function(string){
   tr <- str_trim(unlist(str_split(string,"\t"))[1])
-  print(tr)
   return(tr)}
 
 names <- map(names$X1,trct)
@@ -106,7 +106,7 @@ meta <- dplyr::inner_join(hc.anno, meta, by = c("info"="Info"))
 meta <- meta %>%
   dplyr::filter(Year>=2004)
 
-# year/PI to cluster heatmaps
+# PI to cluster heatmaps
 meta.pi <- meta %>% 
   group_by(PI) %>%
   summarize(cluster) %>%
@@ -118,8 +118,44 @@ for(ii in 1:nrow(meta.pi))
     df[unlist(meta.pi[ii,"cluster"]),unlist(meta.pi[ii,"PI"])] = unlist(meta.pi[ii,"n"])
 }
 df[is.na(df)] <- 0
-pheatmap(phm, colorRampPalette(rev(brewer.pal(n = 4, name ="RdYlBu")))(300),
+for(pi in colnames(df))
+{
+  df[,pi] <- df[,pi]/sum(df[,pi])
+}
+pheatmap(df, colorRampPalette(rev(brewer.pal(n = 4, name ="RdYlBu")))(300),
          labels_col = colnames(df), labels_row = 1:15, cluster_rows = F)
+
+# year to cluster heatmaps
+meta.year <- meta %>% 
+  group_by(Year) %>%
+  summarize(cluster) %>%
+  count(cluster) %>%
+  arrange(cluster,year)
+df <- data.frame(row.names = 2004:2019)
+for(ii in 1:nrow(meta.year))
+{
+  df[as.character(unlist(meta.year[ii,"Year"])),as.character(unlist(meta.year[ii,"cluster"]))] = unlist(meta.year[ii,"n"])
+}
+df[is.na(df)] <- 0
+df <- t(df)
+for(year in colnames(df))
+{
+  df[,year] <- df[,year]/sum(df[,year])
+}
+df <- df[,-9]
+df <- df[,-16]
+pheatmap(df, colorRampPalette(rev(brewer.pal(n = 4, name ="RdYlBu")))(300),
+         labels_col = colnames(df), labels_row = 1:15, cluster_cols = F, cluster_rows = F)
+
+ent <- function(vec)
+{
+  vec <- vec[vec!=0]
+  return(sum(-vec*log(vec)))
+}
+entp <- tibble(year = colnames(df), entropy = unname(apply(df,2,ent)))
+entp %>% ggplot(aes(year,entropy,group=1)) +
+  geom_point() +
+  geom_smooth(formula = y~log(x))
 
 # pi-trajectory
 one_pi <- function(name)
@@ -128,3 +164,22 @@ one_pi <- function(name)
   cres.tmp <- cres.tmp[,apply(cres.tmp,2,sum)>0]
   pca(cres.tmp, meta$Year[meta$info %in% names[names %in% unlist(meta[meta$PI==name,"info"])]])
 }
+
+# degree distribution
+deg <- data.frame("0.005" = rowSums(mtx > 0.005),
+                  "0.01" = rowSums(mtx > 0.01),
+                  "0.05" = rowSums(mtx > 0.05),
+                  "0.1" = rowSums(mtx > 0.1))
+deg.m <- melt(deg)
+colnames(deg.m) <- c("threshold", "value")
+deg.m$threshold <- substring(deg.m$threshold, 2)
+ggplot(deg.m, aes(x=value, fill=threshold)) + 
+  geom_density(alpha=0.25) +
+  xlab("k") + ylab("P(k)")
+ggplot(deg.m, aes(x=value, fill=threshold)) +
+  geom_density(alpha=0.25) +
+  scale_x_log10() +
+  scale_y_log10() +
+  xlab("k") + ylab("P(k)")
+print(paste(mean(deg),var(hdeg$counts)))
+plot(log2(hdeg$breaks[-1]),log2(hdeg$counts))
