@@ -1,2 +1,2 @@
-# citation_network_my_tools
-scripts useful in building citation network and analysis
+# citation_network_tools
+scripts used in building citation networks and downstream analysis
